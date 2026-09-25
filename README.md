@@ -34,14 +34,14 @@ python3 baixar_curriculos.py /caminho/para/pasta
 
 As opções principais ficam no topo de [`baixar_curriculos.py`](baixar_curriculos.py):
 
-* **`MIN_ID`** (`3526`): baixa apenas os currículos com ID igual ou superior ao informado.
+* **`MIN_ID`**: atualizado automaticamente para `(último ID baixado + 1)` a cada execução. Você só precisa editar manualmente se quiser forçar o download de uma faixa anterior.
 * **`DEFAULT_OUTPUT_DIR`** (`~/Downloads/curriculos`): diretório padrão onde os currículos serão salvos.
 
 ---
 
 ## ⚡ Recursos da Automação
 
-* **Filtro de ID:** ignora registros antigos abaixo do ID definido.
+* **Controle Automático de ID:** a cada execução concluída, o `MIN_ID` no script é atualizado automaticamente para `(último ID + 1)`, evitando que você precise mexer nele manualmente.
 * **Sem Duplicados:** descarta envios repetidos de um mesmo candidato/cargo ou mesmo arquivo.
 * **Sanitização de Nomes:** substitui barras (`/`) e caracteres inválidos por `-` para não gerar erros no sistema de arquivos.
 * **Download Rápido:** downloads simultâneos em paralelo (10 workers).

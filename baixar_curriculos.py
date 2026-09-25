@@ -15,7 +15,27 @@ import requests
 LOGIN_URL = "https://plataformaescolaemsite.com.br/login/acesso"
 CURRICULOS_URL = "https://plataformaescolaemsite.com.br/curriculos"
 DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Downloads/curriculos")
-MIN_ID = 3526
+MIN_ID = 3906
+
+def update_min_id_in_script(new_min_id: int):
+    """Atualiza a variável MIN_ID no próprio arquivo do script para a próxima execução."""
+    script_path = os.path.abspath(__file__)
+    try:
+        with open(script_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_content = re.sub(
+            r"^MIN_ID\s*=\s*\d+",
+            f"MIN_ID = {new_min_id}",
+            content,
+            flags=re.MULTILINE
+        )
+
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        print(f"[+] ID mínimo atualizado automaticamente para {new_min_id} no script.")
+    except Exception as e:
+        print(f"[!] Aviso: não foi possível atualizar MIN_ID no script: {e}")
 
 def sanitize_filename(text: str) -> str:
     """Remove ou substitui caracteres inválidos para nomes de arquivos."""
@@ -101,9 +121,9 @@ def main():
                 "data_cad": data_cad
             })
 
-    print(f"[*] Currículos com ID >= {MIN_ID}: {len(candidates)}")
+    print(f"[*] Currículos novos com ID >= {MIN_ID}: {len(candidates)}")
     if not candidates:
-        print("[!] Nenhum currículo encontrado para o critério informado.")
+        print(f"[*] Nenhum currículo novo com ID >= {MIN_ID} encontrado no momento.")
         return
 
     # Ignora registros duplicados (mesmo nome + cargo ou mesma URL de arquivo)
@@ -159,6 +179,13 @@ def main():
     if falhas:
         print(f"Falhas (arquivos inacessíveis no servidor): {falhas}")
     print(f"Arquivos salvos em: {output_dir}")
+
+    # Atualiza automaticamente o ID mínimo para a próxima execução
+    if candidates:
+        max_id = max(c["id"] for c in candidates)
+        new_min_id = max_id + 1
+        update_min_id_in_script(new_min_id)
+
     print("="*50)
 
 if __name__ == "__main__":
