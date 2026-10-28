@@ -81,6 +81,10 @@ def get_extension(url: str, content_type: str = "") -> str:
     return ".pdf"
 
 def main():
+    if sys.argv[1:] == ["--version"]:
+        print("BaixarCurriculos 1.0")
+        return
+
     output_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUTPUT_DIR
     os.makedirs(output_dir, exist_ok=True)
     min_id = choose_min_id(load_min_id(output_dir))
