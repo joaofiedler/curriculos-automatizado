@@ -9,29 +9,22 @@ Os arquivos são salvos e renomeados automaticamente no formato:
 
 ---
 
-## 🚀 Como Usar
+## 🚀 Como Usar no Windows
 
-### 1. Pré-requisitos
-Certifique-se de ter o Python 3 e a biblioteca `requests` instalados:
-```bash
-pip install requests
-```
+1. Baixe `BaixarCurriculos.exe`.
+2. Abra o arquivo. O Windows pode pedir confirmação na primeira execução.
+3. Escolha o modo automático ou informe o primeiro ID.
 
-### 2. Executar
-Para rodar com a pasta padrão (`~/Downloads/curriculos`):
-```bash
-python3 baixar_curriculos.py
-```
+O programa cria `Downloads/curriculos`, salva os currículos nessa pasta e guarda o próximo ID em `proximo_id.txt`. A pessoa só precisa manter o `.exe`.
 
 Ao iniciar, escolha uma opção:
 
 1. Usar o `MIN_ID` salvo automaticamente na execução anterior.
 2. Informar o primeiro ID que o programa deve baixar.
 
-Para especificar uma pasta de destino diferente:
-```bash
-python3 baixar_curriculos.py /caminho/para/pasta
-```
+## Gerar o executável
+
+O workflow `Gerar executável do Windows` gera um único `.exe` de 32 bits para Windows 7, 8.1, 10 e 11. Abra a aba **Actions** do GitHub, execute o workflow e baixe o artefato `BaixarCurriculos-Windows`.
 
 ---
 
@@ -39,14 +32,14 @@ python3 baixar_curriculos.py /caminho/para/pasta
 
 As opções principais ficam no topo de [`baixar_curriculos.py`](baixar_curriculos.py):
 
-* **`MIN_ID`**: atualizado automaticamente para `(último ID baixado + 1)` a cada execução. Use a opção 2 para baixar novamente a partir de outro ID.
+* **`MIN_ID`**: primeiro ID usado quando ainda não existe `proximo_id.txt`. Use a opção 2 para baixar novamente a partir de outro ID.
 * **`DEFAULT_OUTPUT_DIR`** (`~/Downloads/curriculos`): diretório padrão onde os currículos serão salvos.
 
 ---
 
 ## ⚡ Recursos da Automação
 
-* **Controle Automático de ID:** a cada execução concluída, o `MIN_ID` no script é atualizado automaticamente para `(último ID + 1)`, evitando que você precise mexer nele manualmente.
+* **Controle Automático de ID:** o programa salva `(último ID + 1)` em `proximo_id.txt`. Se algum download falhar, ele repete a partir da primeira falha na próxima execução.
 * **Sem Duplicados:** descarta envios repetidos de um mesmo candidato/cargo ou mesmo arquivo.
 * **Sanitização de Nomes:** substitui barras (`/`) e caracteres inválidos por `-` para não gerar erros no sistema de arquivos.
 * **Download Rápido:** downloads simultâneos em paralelo (10 workers).

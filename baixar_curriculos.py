@@ -13,17 +13,33 @@ LOGIN_URL = "https://plataformaescolaemsite.com.br/login/acesso"
 CURRICULOS_URL = "https://plataformaescolaemsite.com.br/curriculos"
 DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Downloads/curriculos")
 MIN_ID = 4104
+CHECKPOINT_FILE = "proximo_id.txt"
 
-def choose_min_id() -> int:
+def load_min_id(output_dir: str) -> int:
+    """Lê o próximo ID salvo ou usa o valor inicial do programa."""
+    try:
+        with open(os.path.join(output_dir, CHECKPOINT_FILE), encoding="utf-8") as f:
+            min_id = int(f.read().strip())
+        return min_id if min_id > 0 else MIN_ID
+    except (OSError, ValueError):
+        return MIN_ID
+
+def save_min_id(output_dir: str, min_id: int):
+    """Guarda o próximo ID fora do executável."""
+    with open(os.path.join(output_dir, CHECKPOINT_FILE), "w", encoding="utf-8") as f:
+        f.write(str(min_id))
+    print(f"[+] Próximo ID automático: {min_id}")
+
+def choose_min_id(automatic_min_id: int) -> int:
     """Permite usar o checkpoint automático ou informar o primeiro ID."""
     while True:
         print("\nEscolha o modo de download:")
-        print(f"1) Baixar automaticamente a partir do ID {MIN_ID}")
+        print(f"1) Baixar automaticamente a partir do ID {automatic_min_id}")
         print("2) Informar manualmente o primeiro ID")
         choice = input("Opção: ").strip()
 
         if choice == "1":
-            return MIN_ID
+            return automatic_min_id
         if choice == "2":
             first_id = input("Primeiro ID para baixar: ").strip()
             if first_id.isdigit() and int(first_id) > 0:
@@ -31,26 +47,6 @@ def choose_min_id() -> int:
             print("[!] Digite um ID inteiro maior que zero.")
             continue
         print("[!] Escolha 1 ou 2.")
-
-def update_min_id_in_script(new_min_id: int):
-    """Atualiza a variável MIN_ID no próprio arquivo do script para a próxima execução."""
-    script_path = os.path.abspath(__file__)
-    try:
-        with open(script_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        new_content = re.sub(
-            r"^MIN_ID\s*=\s*\d+",
-            f"MIN_ID = {new_min_id}",
-            content,
-            flags=re.MULTILINE
-        )
-
-        with open(script_path, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        print(f"[+] ID mínimo atualizado automaticamente para {new_min_id} no script.")
-    except Exception as e:
-        print(f"[!] Aviso: não foi possível atualizar MIN_ID no script: {e}")
 
 def sanitize_filename(text: str) -> str:
     """Remove ou substitui caracteres inválidos para nomes de arquivos."""
@@ -85,9 +81,9 @@ def get_extension(url: str, content_type: str = "") -> str:
     return ".pdf"
 
 def main():
-    min_id = choose_min_id()
     output_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUTPUT_DIR
     os.makedirs(output_dir, exist_ok=True)
+    min_id = choose_min_id(load_min_id(output_dir))
     print(f"[*] Pasta de destino: {output_dir}")
     print(f"[*] Filtrando apenas currículos com ID >= {min_id}")
 
@@ -141,6 +137,7 @@ def main():
     if not candidates:
         print(f"[*] Nenhum currículo novo com ID >= {min_id} encontrado no momento.")
         return
+    max_site_id = max(c["id"] for c in candidates)
 
     # Ignora registros duplicados (mesmo nome + cargo ou mesma URL de arquivo)
     unique_candidates = []
@@ -160,6 +157,7 @@ def main():
     print("[*] Iniciando downloads...")
     sucessos = 0
     falhas = 0
+    failed_ids = []
 
     def download_candidate(cand):
         url = cand["url"]
@@ -187,6 +185,7 @@ def main():
                 print(f"[OK] [ID {cid}] {name}")
             else:
                 falhas += 1
+                failed_ids.append(cid)
                 print(f"[FALHA] [ID {cid}] {name} -> {err}")
 
     print("\n" + "="*50)
@@ -196,13 +195,16 @@ def main():
         print(f"Falhas (arquivos inacessíveis no servidor): {falhas}")
     print(f"Arquivos salvos em: {output_dir}")
 
-    # Atualiza automaticamente o ID mínimo para a próxima execução
-    if candidates:
-        max_id = max(c["id"] for c in candidates)
-        new_min_id = max_id + 1
-        update_min_id_in_script(new_min_id)
+    # Repete a partir da primeira falha para não perder nenhum currículo.
+    save_min_id(output_dir, min(failed_ids) if failed_ids else max_site_id + 1)
 
     print("="*50)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"[!] O programa encontrou um erro: {e}")
+    finally:
+        if getattr(sys, "frozen", False):
+            input("\nPressione Enter para fechar...")
