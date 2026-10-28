@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Script de automação para download de currículos da plataforma Escola em Site.
-Filtra apenas IDs >= 3526 e salva com o formato: "<Nome> - <Cargo>.<extensão>"
-"""
+"""Baixa currículos da plataforma Escola em Site a partir de um ID inicial."""
 
 import os
 import re
@@ -15,7 +12,25 @@ import requests
 LOGIN_URL = "https://plataformaescolaemsite.com.br/login/acesso"
 CURRICULOS_URL = "https://plataformaescolaemsite.com.br/curriculos"
 DEFAULT_OUTPUT_DIR = os.path.expanduser("~/Downloads/curriculos")
-MIN_ID = 3906
+MIN_ID = 4104
+
+def choose_min_id() -> int:
+    """Permite usar o checkpoint automático ou informar o primeiro ID."""
+    while True:
+        print("\nEscolha o modo de download:")
+        print(f"1) Baixar automaticamente a partir do ID {MIN_ID}")
+        print("2) Informar manualmente o primeiro ID")
+        choice = input("Opção: ").strip()
+
+        if choice == "1":
+            return MIN_ID
+        if choice == "2":
+            first_id = input("Primeiro ID para baixar: ").strip()
+            if first_id.isdigit() and int(first_id) > 0:
+                return int(first_id)
+            print("[!] Digite um ID inteiro maior que zero.")
+            continue
+        print("[!] Escolha 1 ou 2.")
 
 def update_min_id_in_script(new_min_id: int):
     """Atualiza a variável MIN_ID no próprio arquivo do script para a próxima execução."""
@@ -70,10 +85,11 @@ def get_extension(url: str, content_type: str = "") -> str:
     return ".pdf"
 
 def main():
+    min_id = choose_min_id()
     output_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_OUTPUT_DIR
     os.makedirs(output_dir, exist_ok=True)
     print(f"[*] Pasta de destino: {output_dir}")
-    print(f"[*] Filtrando apenas currículos com ID >= {MIN_ID}")
+    print(f"[*] Filtrando apenas currículos com ID >= {min_id}")
 
     session = requests.Session()
 
@@ -104,11 +120,11 @@ def main():
     rows = pattern.findall(resp.text)
     print(f"[*] Total de registros encontrados no site: {len(rows)}")
 
-    # Filtra ID >= 3526
+    # Filtra a partir do ID escolhido
     candidates = []
     for r in rows:
         cand_id = int(r[0])
-        if cand_id >= MIN_ID:
+        if cand_id >= min_id:
             nome = sanitize_filename(unescape(r[1]))
             cargo = sanitize_filename(unescape(r[4]))
             url = r[5].strip()
@@ -121,9 +137,9 @@ def main():
                 "data_cad": data_cad
             })
 
-    print(f"[*] Currículos novos com ID >= {MIN_ID}: {len(candidates)}")
+    print(f"[*] Currículos novos com ID >= {min_id}: {len(candidates)}")
     if not candidates:
-        print(f"[*] Nenhum currículo novo com ID >= {MIN_ID} encontrado no momento.")
+        print(f"[*] Nenhum currículo novo com ID >= {min_id} encontrado no momento.")
         return
 
     # Ignora registros duplicados (mesmo nome + cargo ou mesma URL de arquivo)
