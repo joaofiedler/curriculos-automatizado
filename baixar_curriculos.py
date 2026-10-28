@@ -210,5 +210,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[!] O programa encontrou um erro: {e}")
     finally:
-        if getattr(sys, "frozen", False):
+        if getattr(sys, "frozen", False) and "--version" not in sys.argv:
             input("\nPressione Enter para fechar...")
